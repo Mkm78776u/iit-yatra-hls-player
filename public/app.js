@@ -3,6 +3,7 @@
     const videoUrlInput = document.getElementById('videoUrlInput');
     const loadBtn = document.getElementById('loadBtn');
     const playerInfo = document.getElementById('playerInfo');
+    const qualitySelect = document.getElementById('qualitySelect');
     
     let hls = null;
     
@@ -23,6 +24,7 @@
     function loadStream(url) {
         if (hls) {
             hls.destroy();
+            qualitySelect.innerHTML = '<option value="auto">Auto</option>';
         }
         
         if (Hls.isSupported()) {
@@ -31,6 +33,18 @@
             hls.attachMedia(video);
             
             hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                // Populate quality selector
+                qualitySelect.innerHTML = '<option value="auto">Auto</option>';
+                hls.levels.forEach((level, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.text = level.height + 'p';
+                    qualitySelect.appendChild(option);
+                });
+                
+                // Set default to auto
+                hls.currentLevel = -1;
+                
                 video.play();
                 updatePlayerInfo('Stream loaded successfully!\n\n' + getPlayerStats());
             });
@@ -66,9 +80,9 @@
     
     // Update player info display
     function updatePlayerInfo(info) {
-    const watermark = "\n\n---\nMade by Mithilesh KMWT || Contact: mithileshkmwt@gmail.com";
-    playerInfo.textContent = info + watermark;
-}
+        const watermark = "\n\n---\nMade by Mithilesh KMWT || Contact: mithileshkmwt@gmail.com";
+        playerInfo.textContent = info + watermark;
+    }
     
     // Get player stats
     function getPlayerStats() {
@@ -107,6 +121,20 @@
         } else {
             updatePlayerInfo('Please enter a valid URL');
         }
+    });
+    
+    // Quality selector change handler
+    qualitySelect.addEventListener('change', function() {
+        if (!hls) return;
+        
+        const selectedQuality = qualitySelect.value;
+        if (selectedQuality === 'auto') {
+            hls.currentLevel = -1;
+        } else {
+            hls.currentLevel = parseInt(selectedQuality);
+        }
+        
+        updatePlayerInfo('Quality changed!\n\n' + getPlayerStats());
     });
     
     // Periodically update player info
